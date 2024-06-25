@@ -13,11 +13,11 @@ The AddressBookFactory contains one function, deploy. It creates an instance of 
 */
 contract AddressBookFactory {
 
-function deploy(uint _id) external returns (address NewAddressBook){
-	AddressBook newAddressBook = new AddressBook();
-    newAddressBook.transferOwnership(msg.sender);
-    return newAddressBook;
-}
+	function deploy() external returns (AddressBook){
+		AddressBook newAddressBook = new AddressBook();
+		newAddressBook.transferOwnership(msg.sender);
+		return newAddressBook;
+	}
 
 }
 /*
@@ -30,7 +30,7 @@ Review the Ownable contract from OpenZeppelin. You'll need to use it to solve th
 You may wish to use another familiar contract to help with this challenge.
 */
 
-contract AddressBook{
+contract is Ownable(msg.sender) {
 /*
 Create an Ownable contract called AddressBook. In it include:
 A struct called Contact with properties for:
@@ -42,19 +42,18 @@ Additional storage for contacts
 Any other necessary state variables
 */
 
-struct Contact{
-	uint id;
-	string firstName;
-	string lastName;
-	uint[] phoneNumbers;
-	string additionalStorage;
-}
+	struct Contact{
+		uint id;
+		string firstName;
+		string lastName;
+		uint[] phoneNumbers;
+		string additionalStorage;
+	}
 
-Contact[] private contacts;
-//mapping (uint => Contact) contacts;
-mapping (uint => uint) private idToIndex;
-
-uint private nextId = 1;
+	Contact[] private contacts;
+	//mapping (uint => Contact) contacts;
+	mapping (uint => uint) private idToIndex;
+	uint private nextId = 1;
 
 /*
 It should include the following functions:
@@ -62,45 +61,48 @@ Add Contact
 The addContact function should be usable only by the owner of the contract. It should 
 take in the necessary arguments to add a given contact's information to contacts.
 */
-function addContact(string calldata _firstName , string calldata _lastName, uint[] calldata phoneNumbers, string calldata additionalStorage) external onlyOwner{
-	Contact memory contact = Contact({
-		firstName: _firstName,
-		lastName: _lastName,
-		phoneNumbers: _phoneNumbers,
-		additionalStorage: _additionalStorage
-	});
-	//contacts[msg.sender].push(contact);
-	
-	idToIndex[nextId] = contacts.length - 1;
-    nextId++;
-	
-	addressesOfContacts.push(msg.sender); 
-
-}
+	function addContact(string calldata _firstName , string calldata _lastName, uint[] calldata phoneNumbers, string calldata additionalStorage) external onlyOwner{
+		Contact memory contact = Contact({
+			firstName: _firstName,
+			lastName: _lastName,
+			phoneNumbers: _phoneNumbers,
+			additionalStorage: _additionalStorage
+		});
+		contacts.push(contact);
+		
+		idToIndex[nextId] = contacts.length - 1;
+		nextId++;
+	}
 /*
 Delete Contact
 The deleteContact function should be usable only by the owner and should delete the contact under the supplied _id number.
 If the _id is not found, it should revert with an error called ContactNotFound with the supplied id number.
 */
-error ContactNotFound(uint id);
-function deleteContact  (uint _id) external onlyOwner{
-	uint index = idToIndex[id];
-    // Check if the index is valid and if the contact with the provided ID exists
-    if (index >= contacts.length || contacts[index].id != id) revert ContactNotFound(id);
-
-    
-}
+	error ContactNotFound(uint id);
+	function deleteContact (uint _id) external onlyOwner{
+		uint index = idToIndex[_id];
+		// Check if the index is valid and if the contact with the provided ID exists
+		if (index >= contacts.length || contacts[index].id != _id) revert ContactNotFound(_id);
+        // Replace the contact to be deleted with the last contact in the array
+        contacts[index] = contacts[contacts.length - 1];
+        // Update the index mapping for the moved contact
+        idToIndex[contacts[index].id] = index;
+        // Remove the last contact from the array
+        contacts.pop();
+        // Delete the mapping entry for the deleted contact ID
+        delete idToIndex[_id];
+		
+	}
 /*
 Get Contact
 The getContact function returns the contact information of the supplied _id number. It reverts with ContactNotFound if the contact isn't present.
 */
-function getContact(uint _id) external returns (Contact memory){
-    uint index = idToIndex(_id);
-	// Check if the index is valid and if the contact with the provided ID exists
-    if (index >= contacts.length || contacts[index].id != id) revert ContactNotFound(id);
-
-	return contacts(index);
-}
+	function getContact(uint _id) external view returns (Contact memory){
+		uint index = idToIndex(_id);
+		// Check if the index is valid and if the contact with the provided ID exists
+		if (index >= contacts.length || contacts[index].id != _id) revert ContactNotFound(_id);
+		return contacts(index);
+	}
 /*
 QUESTION
 For bonus points (that only you will know about), explain why we can't just use the automatically generated getter for contacts?
@@ -114,8 +116,8 @@ from accessing the information, because all information on the blockchain is pub
 However, it may give the mistaken impression that information is hidden, 
 which could lead to a security incident.
 */
-function getAllContacts() external returns (Contact[] memory){
-	return contacts;
-}
+	function getAllContacts() external view returns (Contact[] memory){
+		return contacts;
+	}
 
 }
