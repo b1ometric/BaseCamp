@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity >=0.6.12 <0.9.0;
 
-// Uncomment this line to use console.log
-// import "hardhat/console.sol";
-
 // Import OpenZeppelin ERC721 contract
 import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC721/ERC721.sol";
 
@@ -62,7 +59,7 @@ contract HaikuNFT is ERC721, ISubmission {
                     string memory existingHaikuString = existingHaikuStrings[j];
                     if (
                         //Compare the Hash values of the strings
-						keccak256(abi.encodePacked(existingHaikuString)) ==
+			keccak256(abi.encodePacked(existingHaikuString)) ==
                         keccak256(abi.encodePacked(newLine))
                     ) {
                         revert HaikuNotUnique();
